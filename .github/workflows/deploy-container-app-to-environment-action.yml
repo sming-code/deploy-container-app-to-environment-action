@@ -1,0 +1,103 @@
+name: Deploy container app to environment
+
+on:
+  workflow_call:
+    inputs:
+      logical-area:
+        description: The logical area to deploy to
+        required: true
+        type: string
+      app-name:
+        description: The name of the app
+        required: true
+        type: string
+      service-name:
+        description: The service name to use for logging
+        required: true
+        type: string
+      version-no:
+        description: The version number of the container image
+        required: true
+        type: string
+      environment:
+        description: The environment to deploy to
+        required: true
+        type: string
+      service-types:
+        description: The service types to deploy
+        required: true
+        type: string
+      branch-name:
+        description: The name of the branch being deployed. This will determine resource naming strategy
+        required: true
+        type: string
+      subscription:
+        description: The subscription for this environment
+        required: true
+        type: string
+    secrets:
+      ghcr-username:
+        required: true
+      ghcr-token:
+        required: true
+      client-id:
+        required: true
+      tenant-id:
+        required: true
+      subscription-id:
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-to-environments:
+    environment: ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        service-type: ${{ fromJson(inputs.service-types) }}
+    steps:
+    - uses: azure/login@v3
+      with:
+        client-id: ${{ secrets.client-id }}
+        tenant-id: ${{ secrets.tenant-id }}
+        subscription-id: ${{ secrets.subscription-id }}
+
+    - name: Generate container app variables
+      id: ca-variables
+      uses: sming-code/get-container-app-variables-action@v1
+      with:
+        environment: ${{ inputs.environment }}
+        app-name: ${{ inputs.app-name }}
+        logical-area: ${{ inputs.logical-area }}
+        service-type: ${{ matrix.service-type }}
+        branch-name: ${{ inputs.branch-name }}
+
+    - uses: sming-code/deploy-container-app-action@v1
+      env:
+        app-insights-exists: ${{ steps.ca-variables.outputs.app-insights-exists }}
+        app-insights-name: ${{ steps.ca-variables.outputs.app-insights-name }}
+        app-name: ${{ inputs.app-name }}
+        container-app-environment-name: ${{ steps.ca-variables.outputs.container-app-environment-name }}
+        container-app-exists: ${{ steps.ca-variables.outputs.container-app-exists }}
+        container-app-image: ${{ steps.ca-variables.outputs.container-app-image }}
+        container-app-name: ${{ steps.ca-variables.outputs.container-app-name }}
+        environment-name: ${{ inputs.environment }}
+        environment-resource-group-name: ${{ steps.ca-variables.outputs.environment-resource-group-name }}
+        ghcr-token: ${{ secrets.ghcr-token }}
+        ghcr-username: ${{ secrets.ghcr-username }}
+        logical-area: ${{ inputs.logical-area }}
+        log-analytics-workspace-name: ${{ steps.ca-variables.outputs.log-analytics-workspace-name }}
+        resource-group-exists: ${{ steps.ca-variables.outputs.resource-group-exists }}
+        resource-group-name: ${{ steps.ca-variables.outputs.resource-group-name }}
+        revision-suffix: ${{ inputs.version-no }}
+        service-name: ${{ inputs.service-name }}
+        sql-database-exists: ${{ steps.ca-variables.outputs.sql-database-exists }}
+        sql-database-name: ${{ steps.ca-variables.outputs.sql-database-name }}
+        sql-server-name: ${{ steps.ca-variables.outputs.sql-server-name }}
+        subscription: ${{ inputs.subscription }}
+        subscription-id: ${{ secrets.subscription-id }}
+        version-no: ${{ inputs.version-no }}
