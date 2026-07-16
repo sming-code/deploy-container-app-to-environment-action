@@ -106,6 +106,8 @@ jobs:
         app-name: ${{ inputs.app-name }}
         service-type: ${{ matrix.service-type }}
         branch-suffix: ${{ needs.get-environment-specific-variables.outputs.branch-suffix }}
+        resource-group-name: ${{ needs.get-environment-specific-variables.outputs.resource-group-name }}
+        resource-group-exists: ${{ needs.get-environment-specific-variables.outputs.resource-group-exists }}
 
     - uses: sming-code/deploy-container-app-action@v1
       env:
