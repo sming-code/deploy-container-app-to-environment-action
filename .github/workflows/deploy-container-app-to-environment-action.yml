@@ -53,6 +53,7 @@ permissions:
 
 jobs:
   get-environment-specific-variables:
+    environment: ${{ inputs.environment }}
     runs-on: ubuntu-latest
     outputs:
       app-insights-exists: ${{ steps.ca-variables.outputs.app-insights-exists }}
