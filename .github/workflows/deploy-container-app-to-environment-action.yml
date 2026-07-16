@@ -76,7 +76,7 @@ jobs:
 
     - name: Generate container app variables
       id: ca-variables
-      uses: ./.github/actions/get-environment-variables
+      uses: ${GITHUB_ACTION_PATH}/.github/actions/get-environment-variables
       with:
         environment: ${{ inputs.environment }}
         app-name: ${{ inputs.app-name }}
@@ -101,7 +101,7 @@ jobs:
 
     - name: Generate container app variables
       id: ca-variables
-      uses: ./.github/actions/get-container-app-variables
+      uses: ${GITHUB_ACTION_PATH}/.github/actions/get-container-app-variables
       with:
         environment: ${{ inputs.environment }}
         app-name: ${{ inputs.app-name }}
