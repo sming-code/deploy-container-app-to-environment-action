@@ -74,14 +74,13 @@ jobs:
         tenant-id: ${{ secrets.tenant-id }}
         subscription-id: ${{ secrets.subscription-id }}
 
-    - name: Generate container app variables
+    - name: Generate container app environment variables
       id: ca-variables
-      uses: ${GITHUB_ACTION_PATH}/.github/actions/get-environment-variables
+      uses: sming-code/get-container-app-environment-variables-action@v1
       with:
         environment: ${{ inputs.environment }}
         app-name: ${{ inputs.app-name }}
         logical-area: ${{ inputs.logical-area }}
-        service-type: ${{ matrix.service-type }}
         branch-name: ${{ inputs.branch-name }}
 
   deploy-to-environment:
@@ -101,7 +100,7 @@ jobs:
 
     - name: Generate container app variables
       id: ca-variables
-      uses: ${GITHUB_ACTION_PATH}/.github/actions/get-container-app-variables
+      uses: sming-code/get-container-app-variables-action@v1
       with:
         environment: ${{ inputs.environment }}
         app-name: ${{ inputs.app-name }}
