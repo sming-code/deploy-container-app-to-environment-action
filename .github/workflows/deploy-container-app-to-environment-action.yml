@@ -52,8 +52,40 @@ permissions:
   contents: read
 
 jobs:
-  deploy-to-environments:
+  get-environment-specific-variables:
+    runs-on: ubuntu-latest
+    outputs:
+      app-insights-exists: ${{ steps.ca-variables.outputs.app-insights-exists }}
+      app-insights-name:  ${{ steps.ca-variables.outputs.app-insights-name }}
+      branch-suffix:  ${{ steps.ca-variables.outputs.branch-suffix }}
+      container-app-environment-name:  ${{ steps.ca-variables.outputs.container-app-environment-name }}
+      environment-resource-group-name:  ${{ steps.ca-variables.outputs.environment-resource-group-name }}
+      log-analytics-workspace-name:  ${{ steps.ca-variables.outputs.log-analytics-workspace-name }}
+      resource-group-exists:  ${{ steps.ca-variables.outputs.resource-group-exists }}
+      resource-group-name:  ${{ steps.ca-variables.outputs.resource-group-name }}
+      sql-database-exists:  ${{ steps.ca-variables.outputs.sql-database-exists }}
+      sql-database-name:  ${{ steps.ca-variables.outputs.sql-database-name }}
+      sql-server-name:  ${{ steps.ca-variables.outputs.sql-server-name }}
+    steps:
+    - uses: azure/login@v3
+      with:
+        client-id: ${{ secrets.client-id }}
+        tenant-id: ${{ secrets.tenant-id }}
+        subscription-id: ${{ secrets.subscription-id }}
+
+    - name: Generate container app variables
+      id: ca-variables
+      uses: ./.github/actions/get-environment-variables
+      with:
+        environment: ${{ inputs.environment }}
+        app-name: ${{ inputs.app-name }}
+        logical-area: ${{ inputs.logical-area }}
+        service-type: ${{ matrix.service-type }}
+        branch-name: ${{ inputs.branch-name }}
+
+  deploy-to-environment:
     environment: ${{ inputs.environment }}
+    needs: [ get-environment-specific-variables ]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -68,36 +100,35 @@ jobs:
 
     - name: Generate container app variables
       id: ca-variables
-      uses: sming-code/get-container-app-variables-action@v1
+      uses: ./.github/actions/get-container-app-variables
       with:
         environment: ${{ inputs.environment }}
         app-name: ${{ inputs.app-name }}
-        logical-area: ${{ inputs.logical-area }}
         service-type: ${{ matrix.service-type }}
-        branch-name: ${{ inputs.branch-name }}
+        branch-suffix: ${{ needs.get-environment-specific-variables.outputs.branch-suffix }}
 
     - uses: sming-code/deploy-container-app-action@v1
       env:
-        app-insights-exists: ${{ steps.ca-variables.outputs.app-insights-exists }}
-        app-insights-name: ${{ steps.ca-variables.outputs.app-insights-name }}
+        app-insights-exists: ${{ needs.get-environment-specific-variables.outputs.app-insights-exists }}
+        app-insights-name: ${{ needs.get-environment-specific-variables.outputs.app-insights-name }}
         app-name: ${{ inputs.app-name }}
-        container-app-environment-name: ${{ steps.ca-variables.outputs.container-app-environment-name }}
+        container-app-environment-name: ${{ needs.get-environment-specific-variables.outputs.container-app-environment-name }}
         container-app-exists: ${{ steps.ca-variables.outputs.container-app-exists }}
         container-app-image: ${{ steps.ca-variables.outputs.container-app-image }}
         container-app-name: ${{ steps.ca-variables.outputs.container-app-name }}
         environment-name: ${{ inputs.environment }}
-        environment-resource-group-name: ${{ steps.ca-variables.outputs.environment-resource-group-name }}
+        environment-resource-group-name: ${{ needs.get-environment-specific-variables.outputs.environment-resource-group-name }}
         ghcr-token: ${{ secrets.ghcr-token }}
         ghcr-username: ${{ secrets.ghcr-username }}
         logical-area: ${{ inputs.logical-area }}
-        log-analytics-workspace-name: ${{ steps.ca-variables.outputs.log-analytics-workspace-name }}
-        resource-group-exists: ${{ steps.ca-variables.outputs.resource-group-exists }}
-        resource-group-name: ${{ steps.ca-variables.outputs.resource-group-name }}
+        log-analytics-workspace-name: ${{ needs.get-environment-specific-variables.outputs.log-analytics-workspace-name }}
+        resource-group-exists: ${{ needs.get-environment-specific-variables.outputs.resource-group-exists }}
+        resource-group-name: ${{ needs.get-environment-specific-variables.outputs.resource-group-name }}
         revision-suffix: ${{ inputs.version-no }}
         service-name: ${{ inputs.service-name }}
-        sql-database-exists: ${{ steps.ca-variables.outputs.sql-database-exists }}
-        sql-database-name: ${{ steps.ca-variables.outputs.sql-database-name }}
-        sql-server-name: ${{ steps.ca-variables.outputs.sql-server-name }}
+        sql-database-exists: ${{ needs.get-environment-specific-variables.outputs.sql-database-exists }}
+        sql-database-name: ${{ needs.get-environment-specific-variables.outputs.sql-database-name }}
+        sql-server-name: ${{ needs.get-environment-specific-variables.outputs.sql-server-name }}
         subscription: ${{ inputs.subscription }}
         subscription-id: ${{ secrets.subscription-id }}
         version-no: ${{ inputs.version-no }}
