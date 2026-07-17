@@ -134,6 +134,7 @@ jobs:
         resource-group-name: ${{ needs.get-environment-specific-variables.outputs.resource-group-name }}
         revision-suffix: ${{ inputs.version-no }}
         service-name: ${{ inputs.service-name }}
+        service-type: ${{ matrix.service-type }}
         sql-database-name: ${{ needs.get-environment-specific-variables.outputs.sql-database-name }}
         sql-server-name: ${{ needs.get-environment-specific-variables.outputs.sql-server-name }}
         version-no: ${{ inputs.version-no }}
